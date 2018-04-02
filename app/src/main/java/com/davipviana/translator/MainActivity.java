@@ -18,10 +18,13 @@ import android.widget.Toast;
 
 import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServerEvents;
 import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
+import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
+import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
+import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
 
 public class MainActivity extends AppCompatActivity
-        /*implements ISpeechRecognitionServerEvents*/ {
+        implements ISpeechRecognitionServerEvents {
 
     public static final String LOG_TAG = "TranslatorApp";
     private MicrophoneRecognitionClient micClient = null;
@@ -61,7 +64,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 if (hasInternetConnection()) {
                     resultText.setText("");
-                    //initRecording();
+                    initRecording();
                     if (micClient != null) {
                         if (speechMode.equals(SpeechRecognitionMode.ShortPhrase)) {
                             if (!hasStartedRecording) {
@@ -144,8 +147,93 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    private void initRecording() {
+        if ((hasOptionChanged) || (micClient == null)) {
+            Log.d(LOG_TAG, "Language id " + languageCode + "\nSpeech mode is " + speechMode);
+            if (key.equals(Constants.PRIMARY_SUBSCRIPTION_KEY)) {
+                resultText.append("Connecting with PRIMARY key\n");
+            } else {
+                resultText.append("Connecting with SECONDARY key\n");
+            }
+            micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(this, speechMode, languageCode, this, key);
+            hasOptionChanged = false;
+        }
+    }
 
-//    @Override
+    @Override
+    public void onPartialResponseReceived(String response) {
+        resultText.append("PARTIAL RESULT:\n");
+        resultText.append(response + "\n");
+    }
+
+    @Override
+    public void onFinalResponseReceived(RecognitionResult recognitionResult) {
+        // explanation of results at https://msdn.microsoft.com/en-us/library/mt613453.aspx
+        boolean isFinalDictationMessage = (
+                speechMode == SpeechRecognitionMode.LongDictation
+                    && (recognitionResult.RecognitionStatus == RecognitionStatus.EndOfDictation
+                        || recognitionResult.RecognitionStatus == RecognitionStatus.DictationEndSilenceTimeout
+                        || recognitionResult.RecognitionStatus == RecognitionStatus.RecognitionSuccess
+                    )
+        );
+        if(speechMode == SpeechRecognitionMode.ShortPhrase || isFinalDictationMessage){
+            if(micClient != null) {
+                micClient.endMicAndRecognition();
+            }
+
+            fab.setEnabled(true);
+            fab.setImageResource(onlineIcon);
+        }
+
+        String s = "";
+        if(isFinalDictationMessage) {
+            s += "Final Dictation Messsage\n";
+        }
+
+        if(recognitionResult.Results.length > 0) {
+            s += "Text Suggestions\n";
+            for(int i = 0; i < recognitionResult.Results.length; i++) {
+                s += (i+1) + " " + recognitionResult.Results[i].DisplayText + "\n";
+            }
+            s += "\n" + resultText.getText().toString();
+            resultText.setText(s);
+        }
+    }
+
+    @Override
+    public void onIntentReceived(String response) {
+        // not using speech recognition with intent, but must implement all the interface methods
+    }
+
+    @Override
+    public void onError(int errorCode, String response) {
+        fab.setEnabled(true);
+        fab.setImageResource(onlineIcon);
+        Toast.makeText(this, "Cannot connect to server\nError has ocurred", Toast.LENGTH_LONG).show();
+        resultText.append("Error " + errorCode + ": " + response + "\n");
+        micClient = null; // Force initialization when recording next time
+        key = Constants.SECONDARY_SUBSCRIPTION_KEY;
+    }
+
+    @Override
+    public void onAudioEvent(boolean isRecording) {
+        hasStartedRecording = isRecording;
+        if(!isRecording) {
+            if(micClient != null) {
+                micClient.endMicAndRecognition();
+            }
+            fab.setEnabled(true);
+            fab.setImageResource(onlineIcon);
+        } else {
+            if(speechMode == SpeechRecognitionMode.ShortPhrase) {
+                fab.setEnabled(false);
+            }
+            fab.setImageResource(busyIcon);
+        }
+        resultText.append(isRecording ? "RECORDING STARTED\n" : "RECORDING ENDED\n");
+    }
+
+    //    @Override
 //    public boolean onCreateOptionsMenu(Menu menu) {
 //        // Inflate the menu; this adds items to the action bar if it is present.
 //        getMenuInflater().inflate(R.menu.menu_main, menu);
