@@ -8,8 +8,30 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServerEvents;
+import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
+import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
+
+public class MainActivity extends AppCompatActivity
+    implements ISpeechRecognitionServerEvents {
+
+    public static final String LOG_TAG = "TranslatorApp";
+    private MicrophoneRecognitionClient micClient = null;
+    private SpeechRecognitionMode speechMode = SpeechRecognitionMode.ShortPhrase;
+
+    private String languageCode = Constants.LANGUAGE_CODES[0];
+    private String key = Constants.PRIMARY_SUBSCRIPTION_KEY;
+
+    private TextView resultText;
+    private FloatingActionButton fab;
+
+    private int onlineIcon;
+    private int busyIcon;
+
+    private boolean hasStartedRecording = false;
+    private boolean hasOptionChanged = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
