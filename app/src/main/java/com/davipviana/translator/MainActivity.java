@@ -2,6 +2,7 @@ package com.davipviana.translator;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
@@ -140,6 +141,7 @@ public class MainActivity extends AppCompatActivity
                         Log.d(LOG_TAG, "In Language Spinner onItemSelected");
                         languageCode = Constants.LANGUAGE_CODES[position];
                         hasOptionChanged = true;
+                        SharedPreferencesUtils.updateBaseLanguageIndex(MainActivity.this, position);
                     }
 
                     @Override
@@ -166,6 +168,7 @@ public class MainActivity extends AppCompatActivity
                         Log.d(LOG_TAG, "In Speech Mode onItemSelected");
                         speechMode = position == 0 ? SpeechRecognitionMode.ShortPhrase : SpeechRecognitionMode.LongDictation;
                         hasOptionChanged = true;
+                        SharedPreferencesUtils.updateSpeechModeIndex(MainActivity.this, position);
                     }
 
                     @Override
@@ -269,7 +272,20 @@ public class MainActivity extends AppCompatActivity
 //        getMenuInflater().inflate(R.menu.menu_main, menu);
 //        return true;
 //    }
-//
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("resultText", resultText.getText().toString());
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        resultText.setText(savedInstanceState.getString("resultText"));
+    }
+
+    //
 //    @Override
 //    public boolean onOptionsItemSelected(MenuItem item) {
 //        // Handle action bar item clicks here. The action bar will
