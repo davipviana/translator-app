@@ -4,6 +4,19 @@
     <string name="speech_mode_prompt">Select Speech Mode</string>
     <string name="language_prompt">Select Language</string>
 
+    <string name="primary_connect">Connecting with PRIMARY key</string>
+    <string name="secondary_connect">Connecting with SECONDARY key</string>
+    <string name="suggestions">Tap the text below to translate</string>
+    <string name="cancel_button_text">Cancel</string>
+    <string name="translate_button_text">Translate</string>
+    <string name="dialog_title">Translate To:</string>
+    <string name="check_connection">Please check your internet connection</string>
+    <string name="internet_error_text">Cannot Connect to server!\nError has occured!</string>
+    <string name="recording_start">RECORDING STARTED\n</string>
+    <string name="recording_end">RECORDING ENDED\n</string>
+    <string name="translation_start">\nTRANSLATION STARTED\n</string>
+    <string name="translation_heading">Translation:\n\n</string>
+
     <string-array name="speech_mode">
         <item>Short Phrase</item>
         <item>Long Dictation</item>
