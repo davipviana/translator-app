@@ -18,10 +18,12 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.memetix.mst.language.Language;
 import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServerEvents;
 import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
@@ -37,10 +39,14 @@ public class MainActivity extends AppCompatActivity
     private SpeechRecognitionMode speechMode = SpeechRecognitionMode.ShortPhrase;
 
     private String languageCode = Constants.LANGUAGE_CODES[0];
+    private Language languageTranslation = Constants.LANGUAGES[0];
     private String key = Constants.PRIMARY_SUBSCRIPTION_KEY;
 
     private TextView resultText;
     private FloatingActionButton fab;
+
+    private ItemAdapter itemAdapter = new ItemAdapter(this);
+    private View suggestionLayout;
 
     private int onlineIcon;
     private int busyIcon;
@@ -61,6 +67,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         resultText = (TextView) findViewById(R.id.resultText);
+        suggestionLayout = findViewById(R.id.suggestionLayout);
+
         onlineIcon = getResources().getIdentifier("@android:drawable/presence_audio_online", null, null);
         busyIcon = getResources().getIdentifier("@android:drawable/ic_voice_search", null, null);
 
@@ -70,6 +78,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 if (hasInternetConnection()) {
                     resultText.setText("");
+                    suggestionLayout.setVisibility(View.GONE);
                     initRecording();
                     if (micClient != null) {
                         if (speechMode.equals(SpeechRecognitionMode.ShortPhrase)) {
@@ -85,7 +94,7 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 } else {
-                    Toast.makeText(MainActivity.this, "Please check your internet connection", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, getString(R.string.check_connection), Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -184,13 +193,15 @@ public class MainActivity extends AppCompatActivity
         if ((hasOptionChanged) || (micClient == null)) {
             Log.d(LOG_TAG, "Language id " + languageCode + "\nSpeech mode is " + speechMode);
             if (key.equals(Constants.PRIMARY_SUBSCRIPTION_KEY)) {
-                resultText.append("Connecting with PRIMARY key\n");
+                resultText.append(getString(R.string.primary_connect));
             } else {
-                resultText.append("Connecting with SECONDARY key\n");
+                resultText.append(getString(R.string.secondary_connect));
             }
             micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(this, speechMode, languageCode, this, key);
             hasOptionChanged = false;
         }
+        // discard previous items
+        itemAdapter.clear();
     }
 
     @Override
@@ -202,6 +213,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onFinalResponseReceived(RecognitionResult recognitionResult) {
         // explanation of results at https://msdn.microsoft.com/en-us/library/mt613453.aspx
+        resultText.setText("");
         boolean isFinalDictationMessage = (
                 speechMode == SpeechRecognitionMode.LongDictation
                     && (recognitionResult.RecognitionStatus == RecognitionStatus.EndOfDictation
@@ -217,20 +229,28 @@ public class MainActivity extends AppCompatActivity
             fab.setEnabled(true);
             fab.setImageResource(onlineIcon);
         }
-
-        String s = "";
-        if(isFinalDictationMessage) {
-            s += "Final Dictation Messsage\n";
-        }
-
         if(recognitionResult.Results.length > 0) {
-            s += "Text Suggestions\n";
+            ListView listView = (ListView) findViewById(R.id.resultList);
+            listView.setAdapter(itemAdapter);
+            suggestionLayout.setVisibility(View.VISIBLE);
             for(int i = 0; i < recognitionResult.Results.length; i++) {
-                s += (i+1) + " " + recognitionResult.Results[i].DisplayText + "\n";
+                itemAdapter.addItem(recognitionResult.Results[i].DisplayText);
             }
-            s += "\n" + resultText.getText().toString();
-            resultText.setText(s);
         }
+
+//        String s = "";
+//        if(isFinalDictationMessage) {
+//            s += "Final Dictation Message\n";
+//        }
+//
+//        if(recognitionResult.Results.length > 0) {
+//            s += "Text Suggestions\n";
+//            for(int i = 0; i < recognitionResult.Results.length; i++) {
+//                s += (i+1) + " " + recognitionResult.Results[i].DisplayText + "\n";
+//            }
+//            s += "\n" + resultText.getText().toString();
+//            resultText.setText(s);
+//        }
     }
 
     @Override
@@ -242,7 +262,7 @@ public class MainActivity extends AppCompatActivity
     public void onError(int errorCode, String response) {
         fab.setEnabled(true);
         fab.setImageResource(onlineIcon);
-        Toast.makeText(this, "Cannot connect to server\nError has ocurred", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, getString(R.string.internet_error_text), Toast.LENGTH_LONG).show();
         resultText.append("Error " + errorCode + ": " + response + "\n");
         micClient = null; // Force initialization when recording next time
         key = Constants.SECONDARY_SUBSCRIPTION_KEY;
@@ -263,15 +283,8 @@ public class MainActivity extends AppCompatActivity
             }
             fab.setImageResource(busyIcon);
         }
-        resultText.append(isRecording ? "RECORDING STARTED\n" : "RECORDING ENDED\n");
+        resultText.append(isRecording ? getString(R.string.recording_start) : getString(R.string.recording_end));
     }
-
-    //    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_main, menu);
-//        return true;
-//    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -284,20 +297,4 @@ public class MainActivity extends AppCompatActivity
         super.onRestoreInstanceState(savedInstanceState);
         resultText.setText(savedInstanceState.getString("resultText"));
     }
-
-    //
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
 }

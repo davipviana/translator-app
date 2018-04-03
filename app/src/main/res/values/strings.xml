@@ -5,7 +5,7 @@
     <string name="language_prompt">Select Language</string>
 
     <string name="primary_connect">Connecting with PRIMARY key</string>
-    <string name="seconda">Connecting with SECONDARY key</string>
+    <string name="secondary_connect">Connecting with SECONDARY key</string>
     <string name="suggestions">Tap the text below to translate</string>
     <string name="cancel_button_text">Cancel</string>
     <string name="translate_button_text">Translate</string>
