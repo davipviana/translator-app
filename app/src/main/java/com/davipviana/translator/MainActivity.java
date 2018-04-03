@@ -128,8 +128,8 @@ public class MainActivity extends AppCompatActivity
     private void initLanguageSpinner() {
         final Spinner spinner = (Spinner) findViewById(R.id.language_spinner);
         spinner.setSaveEnabled(true);
-        // TODO spinner.setSelection(SharedPreferencesUtils.getBaseLanguageIndex(this));
-        // TODO languageCode = Constants.LANGUAGE_CODES[SharedPreferencesUtils.getBaseLanguageIndex(this));
+        spinner.setSelection(SharedPreferencesUtils.getBaseLanguageIndex(this));
+        languageCode = Constants.LANGUAGE_CODES[SharedPreferencesUtils.getBaseLanguageIndex(this)];
 
         spinner.post(new Runnable() {
             @Override
@@ -154,9 +154,9 @@ public class MainActivity extends AppCompatActivity
     private void initSpeechModeSpinner() {
         final Spinner spinner = (Spinner) findViewById(R.id.speech_mode_spinner);
         spinner.setSaveEnabled(true);
-        // TODO int pref = SharedPreferencesUtils.getSpeechModeIndex(this);
-        // TODO spinner.setSelection(pref);
-        // TODO speechMode = pref == 0 ? SpeechRecognitionMode.ShortPhrase : SpeechRecognitionMode.LongDictation;
+        int pref = SharedPreferencesUtils.getSpeechModeIndex(this);
+        spinner.setSelection(pref);
+        speechMode = pref == 0 ? SpeechRecognitionMode.ShortPhrase : SpeechRecognitionMode.LongDictation;
         spinner.post(new Runnable() {
             @Override
             public void run() {
