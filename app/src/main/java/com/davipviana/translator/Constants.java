@@ -1,6 +1,6 @@
 package com.davipviana.translator;
 
-import com.memetix.mst.language.Language;
+import translatorapi.Language;
 
 public class Constants {
     public static final String PRIMARY_SUBSCRIPTION_KEY = "TBA";
@@ -13,8 +13,7 @@ public class Constants {
     public static final String BASE_LANGUAGE_INDEX = "BaseLanguageIndex";
     public static final String CONVERT_LANGUAGE_INDEX = "ConvertLanguageIndex";
 
-    public static final String CLIENT_ID_VALUE = "TBA";
-    public static final String CLIENT_SECRET_VALUE = "TBA";
+    public static final String TRANSLATION_KEY = "TBA";
 
     public static final Language[] LANGUAGES = {
             Language.ENGLISH,

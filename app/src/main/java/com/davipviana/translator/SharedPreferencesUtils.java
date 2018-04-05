@@ -38,4 +38,20 @@ public class SharedPreferencesUtils {
         editor.putInt(Constants.BASE_LANGUAGE_INDEX, languageIndex);
         editor.apply();
     }
+
+    public static int getConvertLanguageIndex(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(
+                Constants.SPEECH_TO_TEXT_PREFERENCES, Context.MODE_PRIVATE
+        );
+        return sharedPreferences.getInt(Constants.CONVERT_LANGUAGE_INDEX, 0);
+    }
+
+    public static void updateConvertLanguageIndex(Context context, int languageIndex) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(
+                Constants.SPEECH_TO_TEXT_PREFERENCES, Context.MODE_PRIVATE
+        );
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt(Constants.CONVERT_LANGUAGE_INDEX, languageIndex);
+        editor.apply();
+    }
 }

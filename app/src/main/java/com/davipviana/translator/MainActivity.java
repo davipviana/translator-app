@@ -1,35 +1,34 @@
 package com.davipviana.translator;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.memetix.mst.language.Language;
 import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServerEvents;
 import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
+
+import translatorapi.Language;
+import translatorapi.Translate;
 
 public class MainActivity extends AppCompatActivity
         implements ISpeechRecognitionServerEvents {
@@ -236,21 +235,53 @@ public class MainActivity extends AppCompatActivity
             for(int i = 0; i < recognitionResult.Results.length; i++) {
                 itemAdapter.addItem(recognitionResult.Results[i].DisplayText);
             }
-        }
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                    final Dialog dialog = new Dialog(MainActivity.this);
+                    dialog.setContentView(R.layout.dialog_content);
 
-//        String s = "";
-//        if(isFinalDictationMessage) {
-//            s += "Final Dictation Message\n";
-//        }
-//
-//        if(recognitionResult.Results.length > 0) {
-//            s += "Text Suggestions\n";
-//            for(int i = 0; i < recognitionResult.Results.length; i++) {
-//                s += (i+1) + " " + recognitionResult.Results[i].DisplayText + "\n";
-//            }
-//            s += "\n" + resultText.getText().toString();
-//            resultText.setText(s);
-//        }
+                    ListView translationList = (ListView) dialog.findViewById(R.id.translation_list);
+                    final ItemAdapter translationAdapter = new ItemAdapter(MainActivity.this);
+                    translationAdapter.setItems(getResources().getStringArray(R.array.languages));
+                    translationList.setAdapter(translationAdapter);
+                    translationAdapter.setSelected(SharedPreferencesUtils.getConvertLanguageIndex(MainActivity.this));
+                    // Initialise the translation language to the stored preference
+                    languageTranslation = Constants.LANGUAGES[SharedPreferencesUtils.getConvertLanguageIndex(MainActivity.this)];
+                    translationList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            languageTranslation = Constants.LANGUAGES[position];
+                            SharedPreferencesUtils.updateConvertLanguageIndex(MainActivity.this, position);
+                            translationAdapter.setSelected(position);
+                        }
+                    });
+
+                    dialog.findViewById(R.id.translate_button).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                            resultText.setText("");
+                            new TranslationTask(Constants.LANGUAGES[SharedPreferencesUtils
+                                    .getBaseLanguageIndex(MainActivity.this)],
+                                    languageTranslation,
+                                    (String) itemAdapter.getItem(position)).execute();
+                        }
+                    });
+
+                    dialog.findViewById(R.id.cancel_button).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                        }
+                    });
+
+                    dialog.setCancelable(true);
+                    dialog.setTitle(getString(R.string.dialog_title));
+                    dialog.show();
+                }
+            });
+        }
     }
 
     @Override
@@ -296,5 +327,43 @@ public class MainActivity extends AppCompatActivity
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         resultText.setText(savedInstanceState.getString("resultText"));
+    }
+
+    private class TranslationTask extends AsyncTask<Void, Void, Void> {
+        private final Language baseLanguage;
+        private final Language convertLanguage;
+        private final String word;
+        private String translatedText = "";
+
+        public TranslationTask(Language baseLanguage, Language convertLanguage, String word) {
+            this.baseLanguage = baseLanguage;
+            this.convertLanguage = convertLanguage;
+            this.word = word;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            resultText.append("Word Selected: " + word);
+            resultText.append(getString(R.string.translation_start));
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Translate.setKey(Constants.TRANSLATION_KEY);
+            try {
+                translatedText = Translate.execute(word, baseLanguage, convertLanguage);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            resultText.setText(getString(R.string.translation_heading));
+            resultText.append(translatedText);
+        }
     }
 }
