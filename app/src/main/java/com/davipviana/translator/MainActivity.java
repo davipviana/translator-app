@@ -15,6 +15,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -26,6 +27,8 @@ import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
+import com.microsoft.speech.tts.Synthesizer;
+import com.microsoft.speech.tts.Voice;
 
 import translatorapi.Language;
 import translatorapi.Translate;
@@ -201,6 +204,11 @@ public class MainActivity extends AppCompatActivity
         }
         // discard previous items
         itemAdapter.clear();
+        // And hide the speak button
+        ImageButton speakButton = (ImageButton) findViewById(R.id.speak_button);
+        if(speakButton != null) {
+            speakButton.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -364,6 +372,30 @@ public class MainActivity extends AppCompatActivity
             super.onPostExecute(aVoid);
             resultText.setText(getString(R.string.translation_heading));
             resultText.append(translatedText);
+
+            // Set up the click listener for the Speak button
+            ImageButton speakButton = (ImageButton) findViewById(R.id.speak_button);
+            if(speakButton != null) {
+                speakButton.setVisibility(View.VISIBLE);
+                speakButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Get the language code that the translation is in
+                        String speechLanguage = Constants.LANGUAGE_CODES[SharedPreferencesUtils.getConvertLanguageIndex(MainActivity.this)];
+                        Log.d(LOG_TAG, "Speech language is " + speechLanguage);
+                        Synthesizer synthesizer = new Synthesizer(getString(R.string.app_name), Constants.PRIMARY_SUBSCRIPTION_KEY);
+                        Voice voice = Voices.getVoice(speechLanguage, 0);
+                        if(voice != null) {
+                            Log.d(LOG_TAG, voice.voiceName);
+                            synthesizer.SetVoice(voice, voice);
+                            Log.d(LOG_TAG, "Speaking: " + translatedText);
+                            synthesizer.SpeakToAudio(translatedText);
+
+                        }
+                    }
+                });
+
+            }
         }
     }
 }
